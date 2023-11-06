@@ -3,6 +3,7 @@ from typing import List
 import numpy as np
 import scipy
 import math
+from scipy.spatial.transform import Rotation
 
 GRAVITATIONAL_PARAMETER = 3.986E5  # (km^3/s^2)
 
@@ -27,9 +28,9 @@ class VelocityVector:
 
 
 class OrbitalStateVectors:
-    def __init__(self, position: PositionVector, velocity: VelocityVector):
-        self.position: PositionVector = position
-        self.velocity: VelocityVector = velocity
+    def __init__(self, position: np.array, velocity: np.array):
+        self.position: np.array = position
+        self.velocity: np.array = velocity
 
 
 class OrbitalElements:
@@ -41,7 +42,7 @@ class OrbitalElements:
         self.longitude_ascending_node = longitude_ascending_node  # in rads
         self.argument_periapsis = argument_periapsis  # in rads
         self.true_anomaly = true_anomaly  # in rads
-
+        self.semi_latus_rectum = self.semi_major_axis * (1 - self.eccentricity ** 2)
 
 class SatelliteStatus:
     def __init__(self, timestamp: datetime, orbital_elements: OrbitalElements):
@@ -49,13 +50,37 @@ class SatelliteStatus:
         self.orbital_elements: OrbitalElements = orbital_elements
         self.orbital_state_vectors = self.convert_orbital_elements_to_state_vectors()
 
-    # def __init__(self, timestamp: datetime, orbital_state_vectors: OrbitalStateVectors):
-    #     self.timestamp = timestamp
-    #     self.orbital_state_vectors: OrbitalStateVectors = orbital_state_vectors
-    #     self.orbital_elements = self.convert_state_vectors_to_orbital_elements()
+    def convert_classical_to_perifocal(self):
+        # AyansolaOgundele_NonlinearDynamicsandControlofSpacecraftRelativeMotion.pdf
+        # Pages 5-10 eq 1.4, 1.20
+        radius = (self.orbital_elements.semi_major_axis * (1 - self.orbital_elements.eccentricity ** 2)) / (1 + self.orbital_elements.eccentricity * math.cos(self.orbital_elements.true_anomaly))
+
+        rx = radius * math.cos(self.orbital_elements.true_anomaly)
+        ry = radius * math.sin(self.orbital_elements.true_anomaly)
+        rz = 0.0
+        radius_vec = np.array([rx, ry, rz])
+
+        gravitational_ratio = math.sqrt(GRAVITATIONAL_PARAMETER / self.orbital_elements.semi_latus_rectum)
+
+        vx = gravitational_ratio * (-math.sin(self.orbital_elements.true_anomaly))
+        vy = gravitational_ratio * (self.orbital_elements.eccentricity + math.cos(self.orbital_elements.true_anomaly))
+        vz = 0.0
+        velocity_vec = np.array([vx, vy, vz])
+
+        return radius_vec, velocity_vec
+
+    def rotate_state_vector(self, vector: np.array) -> np.array:
+        rotation_matrix = Rotation.from_euler("ZXZ", [-self.orbital_elements.argument_periapsis, -self.orbital_elements.inclination, -self.orbital_elements.longitude_ascending_node])
+        vector_rot = vector @ rotation_matrix.as_matrix()
+        return vector_rot
 
     def convert_orbital_elements_to_state_vectors(self) -> OrbitalStateVectors:
-        return OrbitalStateVectors(PositionVector(0, 0, 0), VelocityVector(0, 0, 0))
+        (radius_vec, velocity_vec) = self.convert_classical_to_perifocal()
+
+        position_state_vector = self.rotate_state_vector(radius_vec)
+        velocity_state_vector = self.rotate_state_vector(velocity_vec)
+
+        return OrbitalStateVectors(position_state_vector, velocity_state_vector)
 
     def convert_state_vectors_to_orbital_elements(self) -> OrbitalElements:
         return OrbitalElements(0, 0, 0, 0, 0, 0)
@@ -168,11 +193,11 @@ class TrajectoryPredictor:
         mean_motion_initial = self.compute_mean_motion(satellite_status.get_semi_major_axis())
 
         # Find E initial (eccentric anomaly)
-        eccentric_nomaly_initial = self.compute_eccentric_anomaly(satellite_status.get_eccentricity(),
+        eccentric_anomaly_initial = self.compute_eccentric_anomaly(satellite_status.get_eccentricity(),
                                                                   satellite_status.get_true_anomaly())
 
         # Find M initial (mean anomaly)
-        mean_anomaly_initial = self.compute_mean_anomaly(eccentric_nomaly_initial, satellite_status.get_eccentricity())
+        mean_anomaly_initial = self.compute_mean_anomaly(eccentric_anomaly_initial, satellite_status.get_eccentricity())
 
         # Move mean anomaly to the desired time
 
@@ -203,11 +228,11 @@ class TrajectoryPredictor:
         mean_motion_initial = self.compute_mean_motion(satellite_status.get_semi_major_axis())
 
         # Find E initial (eccentric anomaly)
-        eccentric_nomaly_initial = self.compute_eccentric_anomaly(satellite_status.get_eccentricity(),
+        eccentric_anomaly_initial = self.compute_eccentric_anomaly(satellite_status.get_eccentricity(),
                                                                   satellite_status.get_true_anomaly())
 
         # Find M initial (mean anomaly)
-        mean_anomaly_initial = self.compute_mean_anomaly(eccentric_nomaly_initial, satellite_status.get_eccentricity())
+        mean_anomaly_initial = self.compute_mean_anomaly(eccentric_anomaly_initial, satellite_status.get_eccentricity())
 
         # Find average mean motion
         # average_mean_motion = self.compute_average_mean_motion(mean_motion_initial, )
@@ -244,9 +269,9 @@ class Satellite:
 
 
 if __name__ == "__main__":
-    trajectory_predictor = TrajectoryPredictor(timedelta(hours=6))
+    trajectory_predictor = TrajectoryPredictor(timedelta(seconds=5))
 
-    orbital_elements = OrbitalElements(0.05, 7000, math.radians(50), 0, 0, math.radians(270))
+    orbital_elements = OrbitalElements(0.05, 7000, math.radians(50), 0, 0, math.radians(89.99999999))
     date = datetime(2023, 11, 4, 4, 44, 44)
     satellite_status = SatelliteStatus(date, orbital_elements)
     satellite = Satellite(satellite_status, trajectory_predictor)

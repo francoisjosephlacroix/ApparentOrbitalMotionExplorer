@@ -1,6 +1,7 @@
 import unittest
 from datetime import timedelta, datetime
 import math
+import numpy as np
 
 from TrajectoryPredictor import TrajectoryPredictor, OrbitalElements, SatelliteStatus, Satellite
 
@@ -179,3 +180,142 @@ class TestTrajectoryPredictor(unittest.TestCase):
         new_satellite_statue = self.trajectory_predictor.next_step(self.satellite_status)
 
         self.assertAlmostEqual(expected_true_anomaly_future, new_satellite_statue.get_true_anomaly(), 2)
+
+    def test_convert_classical_to_perifocal_perigee(self):
+        self.orbital_elements = OrbitalElements(0.05, 7000, 0.0, 0.0, 0.0, 0.0)
+        self.date = datetime(2023, 11, 4, 4, 44, 44)
+        self.satellite_status = SatelliteStatus(self.date, self.orbital_elements)
+
+        radius_vec, velocity_vec = self.satellite_status.convert_classical_to_perifocal()
+
+        self.assertEqual(radius_vec[0], 6650)
+        self.assertEqual(radius_vec[1], 0)
+        self.assertEqual(radius_vec[2], 0)
+
+        self.assertEqual(velocity_vec[0], 0)
+        self.assertAlmostEqual(velocity_vec[1], 7.933, 3)
+        self.assertEqual(velocity_vec[2], 0)
+
+    def test_convert_classical_to_perifocal_perigee_with_angles(self):
+        self.orbital_elements = OrbitalElements(0.05, 7000, math.pi/4, math.pi/4, math.pi/4, 0.0)
+        self.date = datetime(2023, 11, 4, 4, 44, 44)
+        self.satellite_status = SatelliteStatus(self.date, self.orbital_elements)
+
+        radius_vec, velocity_vec = self.satellite_status.convert_classical_to_perifocal()
+
+        self.assertEqual(radius_vec[0], 6650)
+        self.assertEqual(radius_vec[1], 0)
+        self.assertEqual(radius_vec[2], 0)
+
+        self.assertEqual(velocity_vec[0], 0)
+        self.assertAlmostEqual(velocity_vec[1], 7.933, 3)
+        self.assertEqual(velocity_vec[2], 0)
+
+    def test_convert_classical_to_perifocal_apogee(self):
+        self.orbital_elements = OrbitalElements(0.05, 7000, 0.0, 0.0, 0.0, math.pi)
+        self.date = datetime(2023, 11, 4, 4, 44, 44)
+        self.satellite_status = SatelliteStatus(self.date, self.orbital_elements)
+
+        radius_vec, velocity_vec = self.satellite_status.convert_classical_to_perifocal()
+
+        self.assertEqual(radius_vec[0], -7350)
+        self.assertAlmostEqual(radius_vec[1], 0, 10)
+        self.assertAlmostEqual(radius_vec[2], 0, 10)
+
+        self.assertAlmostEqual(velocity_vec[0], 0, 10)
+        self.assertAlmostEqual(velocity_vec[1], -7.178, 3)
+        self.assertAlmostEqual(velocity_vec[2], 0, 10)
+
+    def test_rotate_state_vector(self):
+        radius_vec = np.array([6650, 0, 0])
+
+        self.orbital_elements = OrbitalElements(0.05, 7000, math.pi / 4, 0, 0, 0.0)
+        self.date = datetime(2023, 11, 4, 4, 44, 44)
+        self.satellite_status = SatelliteStatus(self.date, self.orbital_elements)
+
+        rotated_vec = self.satellite_status.rotate_state_vector(radius_vec)
+
+        self.assertEqual(rotated_vec[0], radius_vec[0])
+        self.assertEqual(rotated_vec[1], radius_vec[1])
+        self.assertEqual(rotated_vec[2], radius_vec[2])
+
+    def test_rotate_state_vector_half_rotation(self):
+        radius_vec = np.array([6650, 0, 0])
+
+        self.orbital_elements = OrbitalElements(0.05, 7000, math.pi / 4, math.pi, math.pi, 0.0)
+        self.date = datetime(2023, 11, 4, 4, 44, 44)
+        self.satellite_status = SatelliteStatus(self.date, self.orbital_elements)
+
+        rotated_vec = self.satellite_status.rotate_state_vector(radius_vec)
+
+        self.assertEqual(rotated_vec[0], radius_vec[0])
+        self.assertAlmostEqual(rotated_vec[1], radius_vec[1])
+        self.assertAlmostEqual(rotated_vec[2], radius_vec[2])
+
+    def test_convert_classical_to_perifocal(self):
+        radius_vec = np.array([6650, 0, 0])
+
+        self.orbital_elements = OrbitalElements(0.05, 7000, 0.0, 0.0, 0.0, 0.0)
+        self.date = datetime(2023, 11, 4, 4, 44, 44)
+        self.satellite_status = SatelliteStatus(self.date, self.orbital_elements)
+
+        self.satellite_status.convert_classical_to_perifocal()
+
+        self.assertEqual(self.satellite_status.orbital_state_vectors.position[0], 6650)
+        self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.position[1], 0)
+        self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.position[2], 0)
+
+        self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.velocity[0], 0)
+        self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.velocity[1], 7.933, 3)
+        self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.velocity[2], 0)
+
+    def test_convert_classical_to_perifocal_flipped(self):
+        radius_vec = np.array([6650, 0, 0])
+
+        self.orbital_elements = OrbitalElements(0.05, 7000, math.pi, 0.0, math.pi, 0.0)
+        self.date = datetime(2023, 11, 4, 4, 44, 44)
+        self.satellite_status = SatelliteStatus(self.date, self.orbital_elements)
+
+        self.satellite_status.convert_classical_to_perifocal()
+
+        self.assertEqual(self.satellite_status.orbital_state_vectors.position[0], -6650)
+        self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.position[1], 0)
+        self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.position[2], 0)
+
+        self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.velocity[0], 0)
+        self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.velocity[1], 7.933, 3)
+        self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.velocity[2], 0)
+
+    def test_convert_classical_to_perifocal_vertical(self):
+        radius_vec = np.array([6650, 0, 0])
+
+        self.orbital_elements = OrbitalElements(0.05, 7000, math.pi/2, 0.0, 0.0, 0.0)
+        self.date = datetime(2023, 11, 4, 4, 44, 44)
+        self.satellite_status = SatelliteStatus(self.date, self.orbital_elements)
+
+        self.satellite_status.convert_classical_to_perifocal()
+
+        self.assertEqual(self.satellite_status.orbital_state_vectors.position[0], 6650)
+        self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.position[1], 0)
+        self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.position[2], 0)
+
+        self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.velocity[0], 0)
+        self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.velocity[1], 0)
+        self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.velocity[2], 7.933, 3)
+
+    def test_convert_classical_to_perifocal_angles(self):
+        radius_vec = np.array([6650, 0, 0])
+
+        self.orbital_elements = OrbitalElements(0.05, 7000, math.pi/2, 0.0, math.pi/2, 0.0)
+        self.date = datetime(2023, 11, 4, 4, 44, 44)
+        self.satellite_status = SatelliteStatus(self.date, self.orbital_elements)
+
+        self.satellite_status.convert_classical_to_perifocal()
+
+        self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.position[0], 0)
+        self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.position[1], 0)
+        self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.position[2], 6650)
+
+        self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.velocity[0], -7.933, 3)
+        self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.velocity[1], 0)
+        self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.velocity[2], 0)
