@@ -1,4 +1,4 @@
-name: machine-learning-env
+name: orbit-simulator-env
 
 dependencies:
   - numpy
