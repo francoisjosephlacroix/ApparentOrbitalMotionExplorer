@@ -5,26 +5,21 @@ import scipy
 import math
 from scipy.spatial.transform import Rotation
 
-GRAVITATIONAL_PARAMETER = 3.986E5  # (km^3/s^2)
+GRAVITATIONAL_PARAMETER = 3.986004418E5  # (km^3/s^2)
 
-
-# class Vector:
-#
-#     def __init__(self, values: np.array):
-#         self.values: np.array = values
 
 class PositionVector:
     def __init__(self, x, y, z):
-        self.x = x
-        self.y = y
-        self.z = z
+        self.x = float(x)
+        self.y = float(y)
+        self.z = float(z)
 
 
 class VelocityVector:
     def __init__(self, vx, vy, vz):
-        self.vx = vx
-        self.vy = vy
-        self.vz = vz
+        self.vx = float(vx)
+        self.vy = float(vy)
+        self.vz = float(vz)
 
 
 class OrbitalStateVectors:
@@ -36,12 +31,12 @@ class OrbitalStateVectors:
 class OrbitalElements:
     def __init__(self, eccentricity, semi_major_axis, inclination, longitude_ascending_node, argument_periapsis,
                  true_anomaly):
-        self.eccentricity = eccentricity
-        self.semi_major_axis = semi_major_axis  # in km
-        self.inclination = inclination  # in rads
-        self.longitude_ascending_node = longitude_ascending_node  # in rads
-        self.argument_periapsis = argument_periapsis  # in rads
-        self.true_anomaly = true_anomaly  # in rads
+        self.eccentricity = float(eccentricity)
+        self.semi_major_axis = float(semi_major_axis)  # in km
+        self.inclination = float(inclination)  # in rads
+        self.longitude_ascending_node = float(longitude_ascending_node)  # in rads
+        self.argument_periapsis = float(argument_periapsis)  # in rads
+        self.true_anomaly = float(true_anomaly)  # in rads
         self.semi_latus_rectum = self.semi_major_axis * (1 - self.eccentricity ** 2)
 
 class SatelliteStatus:
@@ -49,6 +44,22 @@ class SatelliteStatus:
         self.timestamp: datetime = timestamp
         self.orbital_elements: OrbitalElements = orbital_elements
         self.orbital_state_vectors = self.convert_orbital_elements_to_state_vectors()
+
+    def get_rotation_matrix_LVLH(self):
+        pos_vec = self.orbital_state_vectors.position
+        vel_vec = self.orbital_state_vectors.velocity
+
+        i_vec, j_vec, k_vec = self.get_sat_reference_frame(pos_vec, vel_vec)
+
+        return Rotation.from_matrix(np.array([i_vec, j_vec, k_vec]))
+
+    def get_sat_reference_frame(self, pos_vec, vel_vec):
+        i_vec = pos_vec / np.linalg.norm(pos_vec)
+        pos_vel_cross = np.cross(pos_vec, vel_vec)
+        k_vec = pos_vel_cross / np.linalg.norm(pos_vel_cross)
+        j_vec = np.cross(k_vec, i_vec)
+
+        return i_vec, j_vec, k_vec
 
     def convert_classical_to_perifocal(self):
         # AyansolaOgundele_NonlinearDynamicsandControlofSpacecraftRelativeMotion.pdf
@@ -250,13 +261,33 @@ class TrajectoryPredictor:
     def predict(self, limit=1, nb_steps=100):
         pass
 
-
 class Satellite:
 
     def __init__(self, satellite_status: SatelliteStatus, trajectory_predictor: TrajectoryPredictor):
         self.satellite_status: SatelliteStatus = satellite_status
         self.trajectory: List[SatelliteStatus] = [self.satellite_status]
         self.trajectory_predictor: TrajectoryPredictor = trajectory_predictor
+
+    def get_trajectory_position_per_axis(self):
+        rx, ry, rz = [], [], []
+
+        for sat_status in self.trajectory:
+            pos = sat_status.orbital_state_vectors.position
+            rx.append(pos[0])
+            ry.append(pos[1])
+            rz.append(pos[2])
+
+        return np.array(rx), np.array(ry), np.array(rz)
+
+    def get_reference_frames(self) -> List[Rotation]:
+        ref_frames = []
+
+        for sat_status in self.trajectory:
+            ref_frame = sat_status.get_rotation_matrix_LVLH()
+            ref_frames.append(ref_frame)
+
+        return ref_frames
+
 
     def update_satellite_status(self, new_satellite_status: SatelliteStatus):
         self.satellite_status = new_satellite_status

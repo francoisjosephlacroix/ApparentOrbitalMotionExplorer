@@ -253,8 +253,6 @@ class TestTrajectoryPredictor(unittest.TestCase):
         self.assertAlmostEqual(rotated_vec[2], radius_vec[2])
 
     def test_convert_classical_to_perifocal(self):
-        radius_vec = np.array([6650, 0, 0])
-
         self.orbital_elements = OrbitalElements(0.05, 7000, 0.0, 0.0, 0.0, 0.0)
         self.date = datetime(2023, 11, 4, 4, 44, 44)
         self.satellite_status = SatelliteStatus(self.date, self.orbital_elements)
@@ -270,8 +268,6 @@ class TestTrajectoryPredictor(unittest.TestCase):
         self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.velocity[2], 0)
 
     def test_convert_classical_to_perifocal_flipped(self):
-        radius_vec = np.array([6650, 0, 0])
-
         self.orbital_elements = OrbitalElements(0.05, 7000, math.pi, 0.0, math.pi, 0.0)
         self.date = datetime(2023, 11, 4, 4, 44, 44)
         self.satellite_status = SatelliteStatus(self.date, self.orbital_elements)
@@ -287,8 +283,6 @@ class TestTrajectoryPredictor(unittest.TestCase):
         self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.velocity[2], 0)
 
     def test_convert_classical_to_perifocal_vertical(self):
-        radius_vec = np.array([6650, 0, 0])
-
         self.orbital_elements = OrbitalElements(0.05, 7000, math.pi/2, 0.0, 0.0, 0.0)
         self.date = datetime(2023, 11, 4, 4, 44, 44)
         self.satellite_status = SatelliteStatus(self.date, self.orbital_elements)
@@ -304,8 +298,6 @@ class TestTrajectoryPredictor(unittest.TestCase):
         self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.velocity[2], 7.933, 3)
 
     def test_convert_classical_to_perifocal_angles(self):
-        radius_vec = np.array([6650, 0, 0])
-
         self.orbital_elements = OrbitalElements(0.05, 7000, math.pi/2, 0.0, math.pi/2, 0.0)
         self.date = datetime(2023, 11, 4, 4, 44, 44)
         self.satellite_status = SatelliteStatus(self.date, self.orbital_elements)
@@ -319,3 +311,25 @@ class TestTrajectoryPredictor(unittest.TestCase):
         self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.velocity[0], -7.933, 3)
         self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.velocity[1], 0)
         self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.velocity[2], 0)
+
+    def test_LVLH_reference_frame(self):
+        self.orbital_elements = OrbitalElements(0.05, 7000, 0.0, 0.0, 0.0, 0.0)
+        self.date = datetime(2023, 11, 4, 4, 44, 44)
+        self.satellite_status = SatelliteStatus(self.date, self.orbital_elements)
+
+        pos_vec = np.array([1, 0, 0])
+        vel_vec = np.array([0, 1, 1])
+        i_vec, j_vec, k_vec = self.satellite_status.get_sat_reference_frame(pos_vec, vel_vec)
+
+        self.assertEqual(i_vec[0], 1)
+        self.assertEqual(i_vec[1], 0)
+        self.assertEqual(i_vec[2], 0)
+
+        self.assertEqual(j_vec[0], 0)
+        self.assertAlmostEqual(j_vec[1], math.sqrt(0.5))
+        self.assertAlmostEqual(j_vec[2], math.sqrt(0.5))
+
+        self.assertEqual(k_vec[0], 0)
+        self.assertAlmostEqual(k_vec[1], -math.sqrt(0.5))
+        self.assertAlmostEqual(k_vec[2], math.sqrt(0.5))
+
