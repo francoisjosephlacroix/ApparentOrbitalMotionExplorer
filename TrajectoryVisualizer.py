@@ -1,51 +1,19 @@
 import math
 from datetime import timedelta, datetime
-from typing import List
 
 import seaborn as sns
 import numpy as np
 
 import matplotlib.pyplot as plt
-from scipy.spatial.transform import Rotation
 
-from TrajectoryPredictor import TrajectoryPredictor, OrbitalElements, SatelliteStatus, Satellite
+from RelativeMotion import RelativeMotion
+from TrajectoryPredictor import TrajectoryPredictor
+from OrbitalCoordinates.OrbitalElements import OrbitalElements
+from SatelliteStatus import SatelliteStatus
+from Satellite import Satellite
 
-
-class RelativeMotion:
-
-    def __init__(self, ref_satellite: Satellite, child_satellite: Satellite):
-        self.ref_satellite: Satellite = ref_satellite
-        self.child_satellite: Satellite = child_satellite
-
-    def get_relative_motion(self):
-        rx, ry, rz = self.ref_satellite.get_trajectory_position_per_axis()
-        rx2, ry2, rz2 = self.child_satellite.get_trajectory_position_per_axis()
-
-        delta_x = self.compute_relative_distance(rx, rx2)
-        delta_y = self.compute_relative_distance(ry, ry2)
-        delta_z = self.compute_relative_distance(rz, rz2)
-
-        return delta_x, delta_y, delta_z
-
-    def compute_relative_distance(self, x, x2):
-        return np.subtract(x2, x)
-
-    def get_relative_motion_LVLH(self):
-        delta_x, delta_y, delta_z = self.get_relative_motion()
-        ref_frames: List[Rotation] = self.ref_satellite.get_reference_frames()
-
-        lvlh_x, lvlh_y, lvlh_z = [], [], []
-
-        for x, y, z, ref_frame in zip(delta_x, delta_y, delta_z, ref_frames):
-            rotated_vec = ref_frame.apply(np.array([x, y, z]))
-            lvlh_x.append(rotated_vec[0])
-            lvlh_y.append(rotated_vec[1])
-            lvlh_z.append(rotated_vec[2])
-
-        return lvlh_x, lvlh_y, lvlh_z
 
 def main():
-
     show_orbits = True
     show_relative_motion = True
     show_relative_motion_lvlh = True
@@ -69,7 +37,8 @@ def main():
 
     trajectory_predictor2 = TrajectoryPredictor(timedelta(seconds=5))
     # eccentricity, semi_major_axis, inclination, longitude_ascending_node, argument_periapsis, true_anomaly
-    orbital_elements2 = OrbitalElements(0.06, 8000, math.radians(15), math.radians(5), math.radians(5), math.radians(15))
+    orbital_elements2 = OrbitalElements(0.06, 8000, math.radians(15), math.radians(5), math.radians(5),
+                                        math.radians(15))
     satellite_status2 = SatelliteStatus(date, orbital_elements2)
     satellite2 = Satellite(satellite_status2, trajectory_predictor2)
     satellite2.extend_trajectory(steps=steps)
@@ -93,7 +62,7 @@ def main():
         # cm = sns.color_palette("dark:#5A9_r", as_cmap=True)
         # cm = sns.color_palette("blend:#ffffff,#376efa,#266e2e,#acad8c,#266e2e,#124d18,#ffffff", as_cmap=True)
         cm = sns.color_palette("blend:#b300ff,#7959e3", as_cmap=True)
-        ax.plot_surface(sphere_radius*x, sphere_radius*y, sphere_radius*z, cmap=cm, alpha=0.2)
+        ax.plot_surface(sphere_radius * x, sphere_radius * y, sphere_radius * z, cmap=cm, alpha=0.2)
 
         total_max = np.array([max(a) for a in [rx, ry, rz, rx2, ry2, rz2]]).max()
         ax.set_zlim(-total_max, total_max)
@@ -105,9 +74,7 @@ def main():
         # plt.tight_layout()
         plt.show()
 
-
     if show_relative_motion:
-
         relative_motion = RelativeMotion(satellite, satellite2)
 
         delta_x, delta_y, delta_z = relative_motion.get_relative_motion()
@@ -133,8 +100,6 @@ def main():
         plt.show()
 
     if show_relative_motion_lvlh:
-
-
         relative_motion = RelativeMotion(satellite, satellite2)
 
         delta_x, delta_y, delta_z = relative_motion.get_relative_motion_LVLH()
@@ -162,16 +127,5 @@ def main():
         plt.show()
 
 
-
-
-
-
-
-
-
-
 if __name__ == "__main__":
     main()
-
-
-

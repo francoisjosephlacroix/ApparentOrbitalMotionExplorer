@@ -1,118 +1,9 @@
-from datetime import datetime, timedelta
-from typing import List
-import numpy as np
-import scipy
+from datetime import timedelta
 import math
-from scipy.spatial.transform import Rotation
 
-GRAVITATIONAL_PARAMETER = 3.986004418E5  # (km^3/s^2)
-
-
-class PositionVector:
-    def __init__(self, x, y, z):
-        self.x = float(x)
-        self.y = float(y)
-        self.z = float(z)
-
-
-class VelocityVector:
-    def __init__(self, vx, vy, vz):
-        self.vx = float(vx)
-        self.vy = float(vy)
-        self.vz = float(vz)
-
-
-class OrbitalStateVectors:
-    def __init__(self, position: np.array, velocity: np.array):
-        self.position: np.array = position
-        self.velocity: np.array = velocity
-
-
-class OrbitalElements:
-    def __init__(self, eccentricity, semi_major_axis, inclination, longitude_ascending_node, argument_periapsis,
-                 true_anomaly):
-        self.eccentricity = float(eccentricity)
-        self.semi_major_axis = float(semi_major_axis)  # in km
-        self.inclination = float(inclination)  # in rads
-        self.longitude_ascending_node = float(longitude_ascending_node)  # in rads
-        self.argument_periapsis = float(argument_periapsis)  # in rads
-        self.true_anomaly = float(true_anomaly)  # in rads
-        self.semi_latus_rectum = self.semi_major_axis * (1 - self.eccentricity ** 2)
-
-class SatelliteStatus:
-    def __init__(self, timestamp: datetime, orbital_elements: OrbitalElements):
-        self.timestamp: datetime = timestamp
-        self.orbital_elements: OrbitalElements = orbital_elements
-        self.orbital_state_vectors = self.convert_orbital_elements_to_state_vectors()
-
-    def get_rotation_matrix_LVLH(self):
-        pos_vec = self.orbital_state_vectors.position
-        vel_vec = self.orbital_state_vectors.velocity
-
-        i_vec, j_vec, k_vec = self.get_sat_reference_frame(pos_vec, vel_vec)
-
-        return Rotation.from_matrix(np.array([i_vec, j_vec, k_vec]))
-
-    def get_sat_reference_frame(self, pos_vec, vel_vec):
-        i_vec = pos_vec / np.linalg.norm(pos_vec)
-        pos_vel_cross = np.cross(pos_vec, vel_vec)
-        k_vec = pos_vel_cross / np.linalg.norm(pos_vel_cross)
-        j_vec = np.cross(k_vec, i_vec)
-
-        return i_vec, j_vec, k_vec
-
-    def convert_classical_to_perifocal(self):
-        # AyansolaOgundele_NonlinearDynamicsandControlofSpacecraftRelativeMotion.pdf
-        # Pages 5-10 eq 1.4, 1.20
-        radius = (self.orbital_elements.semi_major_axis * (1 - self.orbital_elements.eccentricity ** 2)) / (1 + self.orbital_elements.eccentricity * math.cos(self.orbital_elements.true_anomaly))
-
-        rx = radius * math.cos(self.orbital_elements.true_anomaly)
-        ry = radius * math.sin(self.orbital_elements.true_anomaly)
-        rz = 0.0
-        radius_vec = np.array([rx, ry, rz])
-
-        gravitational_ratio = math.sqrt(GRAVITATIONAL_PARAMETER / self.orbital_elements.semi_latus_rectum)
-
-        vx = gravitational_ratio * (-math.sin(self.orbital_elements.true_anomaly))
-        vy = gravitational_ratio * (self.orbital_elements.eccentricity + math.cos(self.orbital_elements.true_anomaly))
-        vz = 0.0
-        velocity_vec = np.array([vx, vy, vz])
-
-        return radius_vec, velocity_vec
-
-    def rotate_state_vector(self, vector: np.array) -> np.array:
-        rotation_matrix = Rotation.from_euler("ZXZ", [-self.orbital_elements.argument_periapsis, -self.orbital_elements.inclination, -self.orbital_elements.longitude_ascending_node])
-        vector_rot = vector @ rotation_matrix.as_matrix()
-        return vector_rot
-
-    def convert_orbital_elements_to_state_vectors(self) -> OrbitalStateVectors:
-        (radius_vec, velocity_vec) = self.convert_classical_to_perifocal()
-
-        position_state_vector = self.rotate_state_vector(radius_vec)
-        velocity_state_vector = self.rotate_state_vector(velocity_vec)
-
-        return OrbitalStateVectors(position_state_vector, velocity_state_vector)
-
-    def convert_state_vectors_to_orbital_elements(self) -> OrbitalElements:
-        return OrbitalElements(0, 0, 0, 0, 0, 0)
-
-    def get_eccentricity(self):
-        return self.orbital_elements.eccentricity
-
-    def get_semi_major_axis(self):
-        return self.orbital_elements.semi_major_axis
-
-    def get_inclination(self):
-        return self.orbital_elements.inclination
-
-    def get_longitude_ascending_node(self):
-        return self.orbital_elements.longitude_ascending_node
-
-    def get_argument_periapsis(self):
-        return self.orbital_elements.argument_periapsis
-
-    def get_true_anomaly(self):
-        return self.orbital_elements.true_anomaly
+from Constants import GRAVITATIONAL_PARAMETER
+from OrbitalCoordinates.OrbitalElements import OrbitalElements
+from SatelliteStatus import SatelliteStatus
 
 
 class TrajectoryPredictor:
@@ -196,7 +87,7 @@ class TrajectoryPredictor:
 
     def compute_true_anomaly_future(self, eccentric_anomaly_future, eccentricity):
         true_anomaly_future = math.acos((math.cos(eccentric_anomaly_future) - eccentricity) / (
-                    1 - eccentricity * math.cos(eccentric_anomaly_future)))
+                1 - eccentricity * math.cos(eccentric_anomaly_future)))
         return self.choose_half_plane_cos(eccentric_anomaly_future, true_anomaly_future)
 
     def next_step(self, satellite_status: SatelliteStatus) -> SatelliteStatus:
@@ -205,7 +96,7 @@ class TrajectoryPredictor:
 
         # Find E initial (eccentric anomaly)
         eccentric_anomaly_initial = self.compute_eccentric_anomaly(satellite_status.get_eccentricity(),
-                                                                  satellite_status.get_true_anomaly())
+                                                                   satellite_status.get_true_anomaly())
 
         # Find M initial (mean anomaly)
         mean_anomaly_initial = self.compute_mean_anomaly(eccentric_anomaly_initial, satellite_status.get_eccentricity())
@@ -240,7 +131,7 @@ class TrajectoryPredictor:
 
         # Find E initial (eccentric anomaly)
         eccentric_anomaly_initial = self.compute_eccentric_anomaly(satellite_status.get_eccentricity(),
-                                                                  satellite_status.get_true_anomaly())
+                                                                   satellite_status.get_true_anomaly())
 
         # Find M initial (mean anomaly)
         mean_anomaly_initial = self.compute_mean_anomaly(eccentric_anomaly_initial, satellite_status.get_eccentricity())
@@ -256,56 +147,6 @@ class TrajectoryPredictor:
 
         # check quadrant
         raise NotImplementedError("Not implemented yet, refer to page 284-285 for algorithm")
-        pass
 
     def predict(self, limit=1, nb_steps=100):
         pass
-
-class Satellite:
-
-    def __init__(self, satellite_status: SatelliteStatus, trajectory_predictor: TrajectoryPredictor):
-        self.satellite_status: SatelliteStatus = satellite_status
-        self.trajectory: List[SatelliteStatus] = [self.satellite_status]
-        self.trajectory_predictor: TrajectoryPredictor = trajectory_predictor
-
-    def get_trajectory_position_per_axis(self):
-        rx, ry, rz = [], [], []
-
-        for sat_status in self.trajectory:
-            pos = sat_status.orbital_state_vectors.position
-            rx.append(pos[0])
-            ry.append(pos[1])
-            rz.append(pos[2])
-
-        return np.array(rx), np.array(ry), np.array(rz)
-
-    def get_reference_frames(self) -> List[Rotation]:
-        ref_frames = []
-
-        for sat_status in self.trajectory:
-            ref_frame = sat_status.get_rotation_matrix_LVLH()
-            ref_frames.append(ref_frame)
-
-        return ref_frames
-
-
-    def update_satellite_status(self, new_satellite_status: SatelliteStatus):
-        self.satellite_status = new_satellite_status
-        self.trajectory.append(self.satellite_status)
-
-    def extend_trajectory(self, steps=1):
-        for step in range(steps):
-            new_satellite_status = self.trajectory_predictor.next_step(self.satellite_status)
-            self.update_satellite_status(new_satellite_status)
-
-
-if __name__ == "__main__":
-    trajectory_predictor = TrajectoryPredictor(timedelta(seconds=5))
-
-    orbital_elements = OrbitalElements(0.05, 7000, math.radians(50), 0, 0, math.radians(89.99999999))
-    date = datetime(2023, 11, 4, 4, 44, 44)
-    satellite_status = SatelliteStatus(date, orbital_elements)
-    satellite = Satellite(satellite_status, trajectory_predictor)
-
-    satellite.extend_trajectory()
-    print("test")
