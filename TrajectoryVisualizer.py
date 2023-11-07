@@ -28,7 +28,7 @@ class RelativeMotion:
         return delta_x, delta_y, delta_z
 
     def compute_relative_distance(self, x, x2):
-        return np.subtract(x, x2)
+        return np.subtract(x2, x)
 
     def get_relative_motion_LVLH(self):
         delta_x, delta_y, delta_z = self.get_relative_motion()
@@ -46,7 +46,7 @@ class RelativeMotion:
 
 def main():
 
-    show_orbits = False
+    show_orbits = True
     show_relative_motion = True
     show_relative_motion_lvlh = True
 
@@ -59,7 +59,7 @@ def main():
 
     trajectory_predictor = TrajectoryPredictor(timedelta(seconds=5))
 
-    orbital_elements = OrbitalElements(0.000, 7000, 0, 0, 0, 0)
+    orbital_elements = OrbitalElements(0.05, 7500, 0, 0, 0, 0)
     date = datetime(2023, 11, 4, 4, 44, 44)
     satellite_status = SatelliteStatus(date, orbital_elements)
     satellite = Satellite(satellite_status, trajectory_predictor)
@@ -68,7 +68,8 @@ def main():
     rx, ry, rz = satellite.get_trajectory_position_per_axis()
 
     trajectory_predictor2 = TrajectoryPredictor(timedelta(seconds=5))
-    orbital_elements2 = OrbitalElements(0.3, 8000, math.radians(3), 0, 0, math.radians(0))
+    # eccentricity, semi_major_axis, inclination, longitude_ascending_node, argument_periapsis, true_anomaly
+    orbital_elements2 = OrbitalElements(0.06, 8000, math.radians(15), math.radians(5), math.radians(5), math.radians(15))
     satellite_status2 = SatelliteStatus(date, orbital_elements2)
     satellite2 = Satellite(satellite_status2, trajectory_predictor2)
     satellite2.extend_trajectory(steps=steps)
@@ -95,16 +96,17 @@ def main():
         ax.plot_surface(sphere_radius*x, sphere_radius*y, sphere_radius*z, cmap=cm, alpha=0.2)
 
         total_max = np.array([max(a) for a in [rx, ry, rz, rx2, ry2, rz2]]).max()
-
+        ax.set_zlim(-total_max, total_max)
+        plt.xlim([-total_max, total_max])
+        plt.ylim([-total_max, total_max])
 
         ax.quiver([0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], length=total_max)
 
-        plt.tight_layout()
+        # plt.tight_layout()
         plt.show()
 
 
     if show_relative_motion:
-
 
         relative_motion = RelativeMotion(satellite, satellite2)
 
