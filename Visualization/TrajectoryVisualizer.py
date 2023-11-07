@@ -6,11 +6,11 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-from RelativeMotion import RelativeMotion
-from TrajectoryPredictor import TrajectoryPredictor
+from Prediction.RelativeMotion import RelativeMotion
+from Prediction.TrajectoryPredictor import TrajectoryPredictor
 from OrbitalCoordinates.OrbitalElements import OrbitalElements
-from SatelliteStatus import SatelliteStatus
-from Satellite import Satellite
+from Prediction.SatelliteStatus import SatelliteStatus
+from Prediction.Satellite import Satellite
 
 
 def main():

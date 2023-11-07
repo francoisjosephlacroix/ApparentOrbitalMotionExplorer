@@ -4,7 +4,7 @@ from datetime import datetime
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-from Constants import GRAVITATIONAL_PARAMETER
+from Prediction.Constants import GRAVITATIONAL_PARAMETER
 from OrbitalCoordinates.OrbitalStateVectors import OrbitalStateVectors
 from OrbitalCoordinates.OrbitalElements import OrbitalElements
 

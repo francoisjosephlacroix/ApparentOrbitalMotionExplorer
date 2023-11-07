@@ -3,9 +3,9 @@ from datetime import timedelta, datetime
 import math
 import numpy as np
 
-from TrajectoryPredictor import TrajectoryPredictor
+from Prediction.TrajectoryPredictor import TrajectoryPredictor
 from OrbitalCoordinates.OrbitalElements import OrbitalElements
-from SatelliteStatus import SatelliteStatus
+from Prediction.SatelliteStatus import SatelliteStatus
 
 
 class TestTrajectoryPredictor(unittest.TestCase):
