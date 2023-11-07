@@ -1,0 +1,8 @@
+name: machine-learning-env
+
+dependencies:
+  - numpy
+  - seaborn
+  - scipy
+  - matplotlib
+  - pylint
