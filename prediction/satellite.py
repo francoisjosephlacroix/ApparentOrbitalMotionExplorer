@@ -3,13 +3,14 @@ from typing import List
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-from TrajectoryPredictor import TrajectoryPredictor
-from SatelliteStatus import SatelliteStatus
+from trajectory_predictor import TrajectoryPredictor
+from satellite_status import SatelliteStatus
 
 
 class Satellite:
 
-    def __init__(self, satellite_status: SatelliteStatus, trajectory_predictor: TrajectoryPredictor):
+    def __init__(self, satellite_status: SatelliteStatus,
+                 trajectory_predictor: TrajectoryPredictor):
         self.satellite_status: SatelliteStatus = satellite_status
         self.trajectory: List[SatelliteStatus] = [self.satellite_status]
         self.trajectory_predictor: TrajectoryPredictor = trajectory_predictor
@@ -29,7 +30,7 @@ class Satellite:
         ref_frames = []
 
         for sat_status in self.trajectory:
-            ref_frame = sat_status.get_rotation_matrix_LVLH()
+            ref_frame = sat_status.get_rotation_matrix_lvlh()
             ref_frames.append(ref_frame)
 
         return ref_frames

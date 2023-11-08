@@ -1,10 +1,10 @@
 import math
 from datetime import timedelta, datetime
 
-from OrbitalCoordinates.OrbitalElements import OrbitalElements
-from Prediction.Satellite import Satellite
-from Prediction.SatelliteStatus import SatelliteStatus
-from Prediction.TrajectoryPredictor import TrajectoryPredictor
+from orbital_coordinates.orbital_elements import OrbitalElements
+from prediction.satellite import Satellite
+from prediction.satellite_status import SatelliteStatus
+from prediction.trajectory_predictor import TrajectoryPredictor
 
 if __name__ == "__main__":
     trajectory_predictor = TrajectoryPredictor(timedelta(seconds=5))

@@ -4,9 +4,9 @@ from datetime import datetime
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-from Prediction.Constants import GRAVITATIONAL_PARAMETER
-from OrbitalCoordinates.OrbitalStateVectors import OrbitalStateVectors
-from OrbitalCoordinates.OrbitalElements import OrbitalElements
+from prediction.constants import GRAVITATIONAL_PARAMETER
+from orbital_coordinates.orbital_state_vectors import OrbitalStateVectors
+from orbital_coordinates.orbital_elements import OrbitalElements
 
 
 class SatelliteStatus:
@@ -15,7 +15,7 @@ class SatelliteStatus:
         self.orbital_elements: OrbitalElements = orbital_elements
         self.orbital_state_vectors = self.convert_orbital_elements_to_state_vectors()
 
-    def get_rotation_matrix_LVLH(self):
+    def get_rotation_matrix_lvlh(self):
         pos_vec = self.orbital_state_vectors.position
         vel_vec = self.orbital_state_vectors.velocity
 

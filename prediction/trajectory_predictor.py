@@ -1,9 +1,9 @@
 from datetime import timedelta
 import math
 
-from Prediction.Constants import GRAVITATIONAL_PARAMETER
-from OrbitalCoordinates.OrbitalElements import OrbitalElements
-from Prediction.SatelliteStatus import SatelliteStatus
+from prediction.constants import GRAVITATIONAL_PARAMETER
+from prediction.satellite_status import SatelliteStatus
+from orbital_coordinates.orbital_elements import OrbitalElements
 
 
 class TrajectoryPredictor:
@@ -127,14 +127,15 @@ class TrajectoryPredictor:
 
     def next_step_with_perturbations(self, satellite_status: SatelliteStatus) -> SatelliteStatus:
         # Find initial mean motion
-        mean_motion_initial = self.compute_mean_motion(satellite_status.get_semi_major_axis())
+        # mean_motion_initial = self.compute_mean_motion(satellite_status.get_semi_major_axis())
 
         # Find E initial (eccentric anomaly)
-        eccentric_anomaly_initial = self.compute_eccentric_anomaly(satellite_status.get_eccentricity(),
-                                                                   satellite_status.get_true_anomaly())
+        # eccentric_anomaly_initial = self.compute_eccentric_anomaly(satellite_status.get_eccentricity(),
+        #                                                            satellite_status.get_true_anomaly())
 
         # Find M initial (mean anomaly)
-        mean_anomaly_initial = self.compute_mean_anomaly(eccentric_anomaly_initial, satellite_status.get_eccentricity())
+        # mean_anomaly_initial = self.compute_mean_anomaly(eccentric_anomaly_initial,
+        #                                                  satellite_status.get_eccentricity())
 
         # Find average mean motion
         # average_mean_motion = self.compute_average_mean_motion(mean_motion_initial, )

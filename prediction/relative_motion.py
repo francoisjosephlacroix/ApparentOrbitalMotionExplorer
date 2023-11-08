@@ -3,7 +3,7 @@ from typing import List
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-from Satellite import Satellite
+from satellite import Satellite
 
 
 class RelativeMotion:
@@ -25,7 +25,7 @@ class RelativeMotion:
     def compute_relative_distance(self, x, x2):
         return np.subtract(x2, x)
 
-    def get_relative_motion_LVLH(self):
+    def get_relative_motion_lvlh(self):
         delta_x, delta_y, delta_z = self.get_relative_motion()
         ref_frames: List[Rotation] = self.ref_satellite.get_reference_frames()
 

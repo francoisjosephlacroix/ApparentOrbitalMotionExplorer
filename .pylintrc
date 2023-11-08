@@ -1,0 +1,12 @@
+[FORMAT]
+max-line-length=120
+disable=missing-module-docstring,
+        missing-function-docstring,
+        missing-class-docstring,
+        too-many-arguments,
+        too-few-public-methods,
+        chained-comparison,
+        no-else-break
+
+[REFACTORING]
+no-else-return=no

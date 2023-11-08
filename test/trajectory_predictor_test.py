@@ -3,9 +3,9 @@ from datetime import timedelta, datetime
 import math
 import numpy as np
 
-from Prediction.TrajectoryPredictor import TrajectoryPredictor
-from OrbitalCoordinates.OrbitalElements import OrbitalElements
-from Prediction.SatelliteStatus import SatelliteStatus
+from prediction.trajectory_predictor import TrajectoryPredictor
+from prediction.satellite_status import SatelliteStatus
+from orbital_coordinates.orbital_elements import OrbitalElements
 
 
 class TestTrajectoryPredictor(unittest.TestCase):
@@ -177,8 +177,10 @@ class TestTrajectoryPredictor(unittest.TestCase):
     def test_compute_true_anomaly_future(self):
         expected_true_anomaly_future = math.radians(170.75)
         eccentric_anomaly_future = 2.972
-        actual_true_anomaly_future = self.trajectory_predictor.compute_true_anomaly_future(eccentric_anomaly_future,
-                                                                                           self.satellite_status.get_eccentricity())
+        actual_true_anomaly_future = self.trajectory_predictor.compute_true_anomaly_future(
+            eccentric_anomaly_future,
+            self.satellite_status.get_eccentricity())
+
         self.assertAlmostEqual(expected_true_anomaly_future, actual_true_anomaly_future, 3)
 
     def test_end_to_end(self):
@@ -318,7 +320,7 @@ class TestTrajectoryPredictor(unittest.TestCase):
         self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.velocity[1], 0)
         self.assertAlmostEqual(self.satellite_status.orbital_state_vectors.velocity[2], 0)
 
-    def test_LVLH_reference_frame(self):
+    def test_lvlh_reference_frame(self):
         self.orbital_elements = OrbitalElements(0.05, 7000, 0.0, 0.0, 0.0, 0.0)
         self.date = datetime(2023, 11, 4, 4, 44, 44)
         self.satellite_status = SatelliteStatus(self.date, self.orbital_elements)

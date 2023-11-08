@@ -1,5 +1,9 @@
 class OrbitalElements:
-    def __init__(self, eccentricity, semi_major_axis, inclination, longitude_ascending_node, argument_periapsis,
+    def __init__(self, eccentricity,
+                 semi_major_axis,
+                 inclination,
+                 longitude_ascending_node,
+                 argument_periapsis,
                  true_anomaly):
         self.eccentricity = float(eccentricity)
         self.semi_major_axis = float(semi_major_axis)  # in km

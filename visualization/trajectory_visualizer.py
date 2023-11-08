@@ -6,11 +6,11 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-from Prediction.RelativeMotion import RelativeMotion
-from Prediction.TrajectoryPredictor import TrajectoryPredictor
-from OrbitalCoordinates.OrbitalElements import OrbitalElements
-from Prediction.SatelliteStatus import SatelliteStatus
-from Prediction.Satellite import Satellite
+from prediction.relative_motion import RelativeMotion
+from prediction.trajectory_predictor import TrajectoryPredictor
+from prediction.satellite_status import SatelliteStatus
+from prediction.satellite import Satellite
+from orbital_coordinates.orbital_elements import OrbitalElements
 
 
 def main():
@@ -102,7 +102,7 @@ def main():
     if show_relative_motion_lvlh:
         relative_motion = RelativeMotion(satellite, satellite2)
 
-        delta_x, delta_y, delta_z = relative_motion.get_relative_motion_LVLH()
+        delta_x, delta_y, delta_z = relative_motion.get_relative_motion_lvlh()
         total_max = max([np.absolute(delta_x).max(), np.absolute(delta_y).max(), np.absolute(delta_z).max()])
 
         sns.set_style("dark", {"grid.color": ".1", "grid.linestyle": ":"})
