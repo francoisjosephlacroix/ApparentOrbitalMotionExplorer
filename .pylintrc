@@ -11,4 +11,8 @@ disable=missing-module-docstring,
         chained-comparison,
         no-else-break,
         no-else-return,
-        import-error
+        import-error,
+        unused-variable,
+        too-many-public-methods,
+        too-many-statements,
+        too-many-locals
