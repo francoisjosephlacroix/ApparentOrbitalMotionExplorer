@@ -3,8 +3,8 @@ from typing import List
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-from trajectory_predictor import TrajectoryPredictor
-from satellite_status import SatelliteStatus
+from prediction.satellite_status import SatelliteStatus
+from prediction.trajectory_predictor import TrajectoryPredictor
 
 
 class Satellite:

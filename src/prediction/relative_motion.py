@@ -3,7 +3,7 @@ from typing import List
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-from satellite import Satellite
+from prediction.satellite import Satellite
 
 
 class RelativeMotion:

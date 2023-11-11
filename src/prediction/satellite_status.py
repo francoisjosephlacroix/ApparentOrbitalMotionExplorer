@@ -4,9 +4,9 @@ from datetime import datetime
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-from prediction.constants import GRAVITATIONAL_PARAMETER
-from orbital_coordinates.orbital_state_vectors import OrbitalStateVectors
-from orbital_coordinates.orbital_elements import OrbitalElements
+from src.prediction.constants import GRAVITATIONAL_PARAMETER
+from src.orbital_coordinates.orbital_state_vectors import OrbitalStateVectors
+from src.orbital_coordinates.orbital_elements import OrbitalElements
 
 
 class SatelliteStatus:

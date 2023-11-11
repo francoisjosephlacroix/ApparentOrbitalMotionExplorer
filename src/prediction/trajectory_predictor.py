@@ -1,9 +1,9 @@
 from datetime import timedelta
 import math
 
-from prediction.constants import GRAVITATIONAL_PARAMETER
-from prediction.satellite_status import SatelliteStatus
-from orbital_coordinates.orbital_elements import OrbitalElements
+from src.prediction.constants import GRAVITATIONAL_PARAMETER
+from src.prediction.satellite_status import SatelliteStatus
+from src.orbital_coordinates.orbital_elements import OrbitalElements
 
 
 class TrajectoryPredictor:
