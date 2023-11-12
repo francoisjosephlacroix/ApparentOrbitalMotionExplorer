@@ -86,3 +86,9 @@ class SatelliteStatus:
 
     def get_true_anomaly(self):
         return self.orbital_elements.true_anomaly
+
+    def get_position(self):
+        return self.orbital_state_vectors.position
+
+    def get_velocity(self):
+        return self.orbital_state_vectors.velocity

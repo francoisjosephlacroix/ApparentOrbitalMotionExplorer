@@ -1,5 +1,7 @@
 import json
+import math
 from datetime import timedelta, datetime
+from pathlib import Path
 
 import seaborn as sns
 import numpy as np
@@ -12,41 +14,72 @@ from prediction.satellite import Satellite
 from prediction.satellite_status import SatelliteStatus
 from prediction.trajectory_predictor import TrajectoryPredictor
 
-smac_run = """../../smac3_output/1699503694.4798608"""
-
-smac_history = smac_run + "/0/runhistory.json"
-
-run_history = json.load(open(smac_history, "r"))
-
-print(run_history)
-
-configs = run_history.get("configs")
-configs_to_plot = configs
-leaders_only = True
-
-if leaders_only:
-    smac_intensifier = smac_run + "\\0\\intensifier.json"
-    intensifier = json.load(open(smac_intensifier, "r"))
-    smac_trajectory = intensifier.get("trajectory")
-
-    leaders = {str(l.get('config_ids')[0]): configs.get(str(l.get('config_ids')[0])) for l in smac_trajectory}
-    configs_to_plot = leaders
-
 show_orbits = True
 show_relative_motion = True
 show_relative_motion_lvlh = True
+leaders_only = True
+show_solution = True
+show_top = 3
 
 linecolor = 'royalblue'
 sat_color = "forestgreen"
 sat_color_start = 'y'
 sat_color_end = 'r'
 
-steps = 10000
+base_path = Path("../../smac3_output/")
+run_name = '1699761835.6283555'
+run_path = Path.joinpath(base_path, run_name)
+metadata_path = Path.joinpath(run_path, "metadata.json")
+run_metadata = json.load(open(metadata_path, "r"))
 
-trajectory_predictor = TrajectoryPredictor(timedelta(seconds=5))
+step_size = timedelta(seconds=run_metadata.get("step_size"))
+steps = run_metadata.get("steps")
+ref_sat_config = run_metadata.get("ref_sat_config")
+sat_2_config = run_metadata.get("sat_2_config")
+date = datetime.strptime(run_metadata.get("date"), "%Y-%m-%dT%H:%M:%S")
 
-orbital_elements = OrbitalElements(0.05, 7500, 0, 0, 0, 0)
-date = datetime(2023, 11, 4, 4, 44, 44)
+smac_history = Path.joinpath(run_path, "0", "runhistory.json")
+run_history = json.load(open(smac_history, "r"))
+configs = run_history.get("configs")
+configs_to_plot = configs
+
+def add_optimal_solution_to_graph(graph):
+    trajectory_predictor = TrajectoryPredictor(step_size)
+
+    orbital_elements = OrbitalElements.from_dict(ref_sat_config)
+    satellite_status = SatelliteStatus(date, orbital_elements)
+    satellite = Satellite(satellite_status, trajectory_predictor)
+    satellite.extend_trajectory(steps=steps)
+
+    trajectory_predictor2 = TrajectoryPredictor(step_size)
+    # eccentricity, semi_major_axis, inclination, longitude_ascending_node, argument_periapsis, true_anomaly
+    orbital_elements2 = OrbitalElements.from_dict(sat_2_config)
+    satellite_status2 = SatelliteStatus(date, orbital_elements2)
+    satellite2 = Satellite(satellite_status2, trajectory_predictor2)
+    satellite2.extend_trajectory(steps=steps)
+
+    relative_motion = RelativeMotion(satellite, satellite2)
+
+    delta_x, delta_y, delta_z = relative_motion.get_relative_motion_lvlh()
+
+    graph.plot3D(delta_x, delta_y, delta_z, "g")
+    graph.scatter(delta_x[0], delta_y[0], delta_z[0], linewidths=3, marker="*", edgecolors=sat_color_start)
+    graph.scatter(delta_x[-1], delta_y[-1], delta_z[-1], linewidths=3, marker="*", edgecolors=sat_color_end)
+
+
+if leaders_only:
+    smac_intensifier = Path.joinpath(run_path, "0", "intensifier.json")
+    intensifier = json.load(open(smac_intensifier, "r"))
+    smac_trajectory = intensifier.get("trajectory")
+    smac_trajectory = smac_trajectory[-show_top:]
+    leaders = {str(l.get('config_ids')[0]): configs.get(str(l.get('config_ids')[0])) for l in smac_trajectory}
+    print(leaders)
+    configs_to_plot = leaders
+
+
+trajectory_predictor = TrajectoryPredictor(step_size)
+
+orbital_elements = OrbitalElements.from_dict(ref_sat_config)
 satellite_status = SatelliteStatus(date, orbital_elements)
 satellite = Satellite(satellite_status, trajectory_predictor)
 satellite.extend_trajectory(steps=steps)
@@ -69,7 +102,7 @@ ax_orbits.plot3D(rx, ry, rz)
 
 for idx, config in configs_to_plot.items():
 
-    trajectory_predictor2 = TrajectoryPredictor(timedelta(seconds=5))
+    trajectory_predictor2 = TrajectoryPredictor(step_size)
     # eccentricity, semi_major_axis, inclination, longitude_ascending_node, argument_periapsis, true_anomaly
     orbital_elements2 = OrbitalElements.from_dict(config)
     satellite_status2 = SatelliteStatus(date, orbital_elements2)
@@ -103,15 +136,15 @@ for idx, config in configs_to_plot.items():
         ax_lvlh.scatter(delta_x[0], delta_y[0], delta_z[0], linewidths=3, marker="*", edgecolors=sat_color_start)
         ax_lvlh.scatter(delta_x[-1], delta_y[-1], delta_z[-1], linewidths=3, marker="*", edgecolors=sat_color_end)
 
+        if show_solution:
+            add_optimal_solution_to_graph(ax_lvlh)
+
 u, v = np.mgrid[0:2 * np.pi:180j, 0:np.pi:90j]
 x = np.cos(u) * np.sin(v)
 y = np.sin(u) * np.sin(v)
 z = np.cos(v)
 
 SPHERE_RADIUS = 6371
-# cm = sns.color_palette("light:#5A9", as_cmap=True)
-# cm = sns.color_palette("dark:#5A9_r", as_cmap=True)
-# cm = sns.color_palette("blend:#ffffff,#376efa,#266e2e,#acad8c,#266e2e,#124d18,#ffffff", as_cmap=True)
 cm = sns.color_palette("blend:#b300ff,#7959e3", as_cmap=True)
 ax_orbits.plot_surface(SPHERE_RADIUS * x, SPHERE_RADIUS * y, SPHERE_RADIUS * z, cmap=cm, alpha=0.2)
 

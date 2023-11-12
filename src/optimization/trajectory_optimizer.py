@@ -1,5 +1,6 @@
 import numpy as np
 
+from prediction.trajectory import Trajectory
 from src.prediction.satellite import Satellite
 
 
@@ -20,3 +21,12 @@ class FitnessEvaluator:
     def absolute_distance(self, vec_ref: np.array, vec_2: np.array):
         dist = np.linalg.norm(vec_2 - vec_ref)
         return dist
+
+    def evaluate_trajectory_fitness(self, ref_trajectory: Trajectory, trajectory_2: Trajectory):
+        rx, ry, rz = ref_trajectory.get_coordinates()
+        rx2, ry2, rz2 = trajectory_2.get_coordinates()
+
+        distances = [self.absolute_distance(np.array([x, y, z]), np.array([x2, y2, z2])) for (x, y, z, x2, y2, z2) in
+                     zip(rx, ry, rz, rx2, ry2, rz2)]
+
+        return sum(distances)

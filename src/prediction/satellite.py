@@ -4,6 +4,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 from prediction.satellite_status import SatelliteStatus
+from prediction.trajectory import Trajectory
 from prediction.trajectory_predictor import TrajectoryPredictor
 
 
@@ -16,15 +17,7 @@ class Satellite:
         self.trajectory_predictor: TrajectoryPredictor = trajectory_predictor
 
     def get_trajectory_position_per_axis(self):
-        rx, ry, rz = [], [], []
-
-        for sat_status in self.trajectory:
-            pos = sat_status.orbital_state_vectors.position
-            rx.append(pos[0])
-            ry.append(pos[1])
-            rz.append(pos[2])
-
-        return np.array(rx), np.array(ry), np.array(rz)
+        return Trajectory.from_satellite_status_list(self.trajectory).get_coordinates()
 
     def get_reference_frames(self) -> List[Rotation]:
         ref_frames = []
