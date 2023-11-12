@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from orbital_coordinates.orbital_elements import OrbitalElements
+from prediction.constants import EARTH_RADIUS
 from prediction.relative_motion import RelativeMotion
 from prediction.satellite import Satellite
 from prediction.satellite_status import SatelliteStatus
@@ -27,7 +28,7 @@ sat_color_start = 'y'
 sat_color_end = 'r'
 
 base_path = Path("../../smac3_output/")
-run_name = '1699761835.6283555'
+run_name = '1699765473.964352'
 run_path = Path.joinpath(base_path, run_name)
 metadata_path = Path.joinpath(run_path, "metadata.json")
 run_metadata = json.load(open(metadata_path, "r"))
@@ -42,6 +43,29 @@ smac_history = Path.joinpath(run_path, "0", "runhistory.json")
 run_history = json.load(open(smac_history, "r"))
 configs = run_history.get("configs")
 configs_to_plot = configs
+
+def add_optimal_solution_to_lvlh_graph(graph):
+    trajectory_predictor = TrajectoryPredictor(step_size)
+
+    orbital_elements = OrbitalElements.from_dict(ref_sat_config)
+    satellite_status = SatelliteStatus(date, orbital_elements)
+    satellite = Satellite(satellite_status, trajectory_predictor)
+    satellite.extend_trajectory(steps=steps)
+
+    trajectory_predictor2 = TrajectoryPredictor(step_size)
+    # eccentricity, semi_major_axis, inclination, longitude_ascending_node, argument_periapsis, true_anomaly
+    orbital_elements2 = OrbitalElements.from_dict(sat_2_config)
+    satellite_status2 = SatelliteStatus(date, orbital_elements2)
+    satellite2 = Satellite(satellite_status2, trajectory_predictor2)
+    satellite2.extend_trajectory(steps=steps)
+
+    relative_motion = RelativeMotion(satellite, satellite2)
+
+    delta_x, delta_y, delta_z = relative_motion.get_relative_motion_lvlh()
+
+    graph.plot3D(delta_x, delta_y, delta_z, "g")
+    graph.scatter(delta_x[0], delta_y[0], delta_z[0], linewidths=3, marker="*", edgecolors=sat_color_start)
+    graph.scatter(delta_x[-1], delta_y[-1], delta_z[-1], linewidths=3, marker="*", edgecolors=sat_color_end)
 
 def add_optimal_solution_to_graph(graph):
     trajectory_predictor = TrajectoryPredictor(step_size)
@@ -60,7 +84,7 @@ def add_optimal_solution_to_graph(graph):
 
     relative_motion = RelativeMotion(satellite, satellite2)
 
-    delta_x, delta_y, delta_z = relative_motion.get_relative_motion_lvlh()
+    delta_x, delta_y, delta_z = relative_motion.get_relative_motion()
 
     graph.plot3D(delta_x, delta_y, delta_z, "g")
     graph.scatter(delta_x[0], delta_y[0], delta_z[0], linewidths=3, marker="*", edgecolors=sat_color_start)
@@ -125,6 +149,9 @@ for idx, config in configs_to_plot.items():
         ax_relative.scatter(delta_x[0], delta_y[0], delta_z[0], linewidths=3, marker="*", edgecolors=sat_color_start)
         ax_relative.scatter(delta_x[-1], delta_y[-1], delta_z[-1], linewidths=3, marker="*", edgecolors=sat_color_end)
 
+        if show_solution:
+            add_optimal_solution_to_graph(ax_relative)
+
     if show_relative_motion_lvlh:
         relative_motion = RelativeMotion(satellite, satellite2)
 
@@ -137,14 +164,14 @@ for idx, config in configs_to_plot.items():
         ax_lvlh.scatter(delta_x[-1], delta_y[-1], delta_z[-1], linewidths=3, marker="*", edgecolors=sat_color_end)
 
         if show_solution:
-            add_optimal_solution_to_graph(ax_lvlh)
+            add_optimal_solution_to_lvlh_graph(ax_lvlh)
 
 u, v = np.mgrid[0:2 * np.pi:180j, 0:np.pi:90j]
 x = np.cos(u) * np.sin(v)
 y = np.sin(u) * np.sin(v)
 z = np.cos(v)
 
-SPHERE_RADIUS = 6371
+SPHERE_RADIUS = EARTH_RADIUS
 cm = sns.color_palette("blend:#b300ff,#7959e3", as_cmap=True)
 ax_orbits.plot_surface(SPHERE_RADIUS * x, SPHERE_RADIUS * y, SPHERE_RADIUS * z, cmap=cm, alpha=0.2)
 

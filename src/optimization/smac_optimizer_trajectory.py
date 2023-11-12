@@ -18,11 +18,14 @@ from smac import HyperparameterOptimizationFacade, Scenario
 
 from optimization.trajectory_optimizer import FitnessEvaluator
 from orbital_coordinates.orbital_elements import OrbitalElements
+from prediction.constants import EARTH_RADIUS
 from prediction.relative_motion import RelativeMotion
 from prediction.satellite import Satellite
 from prediction.satellite_status import SatelliteStatus
 from prediction.trajectory import Trajectory
 from prediction.trajectory_predictor import TrajectoryPredictor
+
+INFINITE_COST = float('inf')
 
 steps = 1000
 step_size = timedelta(seconds=15)
@@ -77,7 +80,6 @@ def evaluate(config: Configuration, seed: int = 0) -> float:
     orbital_elements = OrbitalElements.from_dict(ref_sat_config)
     satellite_status = SatelliteStatus(date, orbital_elements)
     satellite = Satellite(satellite_status, trajectory_predictor)
-    satellite.extend_trajectory(steps=steps)
 
     trajectory_predictor2 = TrajectoryPredictor(step_size)
     # eccentricity, semi_major_axis, inclination, longitude_ascending_node, argument_periapsis, true_anomaly
@@ -89,6 +91,11 @@ def evaluate(config: Configuration, seed: int = 0) -> float:
                                         config.get('true_anomaly'))
     satellite_status2 = SatelliteStatus(date, orbital_elements2)
     satellite2 = Satellite(satellite_status2, trajectory_predictor2)
+
+    if orbital_elements2.perigee < (EARTH_RADIUS + 200):
+        return INFINITE_COST
+
+    satellite.extend_trajectory(steps=steps)
     satellite2.extend_trajectory(steps=steps)
 
     relative_motion = RelativeMotion(satellite, satellite2)

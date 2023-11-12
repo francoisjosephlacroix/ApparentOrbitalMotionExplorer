@@ -1,6 +1,7 @@
 import unittest
 
 from orbital_coordinates.orbital_elements import OrbitalElements
+from prediction.constants import EARTH_RADIUS
 
 
 class OrbitalElementsTest(unittest.TestCase):
@@ -23,3 +24,45 @@ class OrbitalElementsTest(unittest.TestCase):
         self.assertEqual(input_dict.get("longitude_ascending_node"), oe.longitude_ascending_node)
         self.assertEqual(input_dict.get("semi_major_axis"), oe.semi_major_axis)
         self.assertEqual(input_dict.get("true_anomaly"), oe.true_anomaly)
+
+    def test_apogee_elliptical(self):
+        ref_sat_config = {
+            'eccentricity': 0.0001107,
+            'semi_major_axis': 6797,
+            'inclination': 0.0,
+            'longitude_ascending_node': 0.0,
+            'argument_periapsis': 0.0,
+            'true_anomaly': 0.0,
+        }
+
+        orbital_elements = OrbitalElements.from_dict(ref_sat_config)
+
+        self.assertAlmostEqual(orbital_elements.apogee, EARTH_RADIUS + 427, 0)
+
+    def test_perigee_elliptical(self):
+        ref_sat_config = {
+            'eccentricity': 0.0001107,
+            'semi_major_axis': 6797,
+            'inclination': 0.0,
+            'longitude_ascending_node': 0.0,
+            'argument_periapsis': 0.0,
+            'true_anomaly': 0.0,
+        }
+
+        orbital_elements = OrbitalElements.from_dict(ref_sat_config)
+
+        self.assertAlmostEqual(orbital_elements.perigee, EARTH_RADIUS + 425, 0)
+
+    def test_apogee_circular(self):
+        ref_sat_config = {
+            'eccentricity': 0.0,
+            'semi_major_axis': 6797,
+            'inclination': 0.0,
+            'longitude_ascending_node': 0.0,
+            'argument_periapsis': 0.0,
+            'true_anomaly': 0.0,
+        }
+
+        orbital_elements = OrbitalElements.from_dict(ref_sat_config)
+
+        self.assertAlmostEqual(orbital_elements.apogee, 6797)

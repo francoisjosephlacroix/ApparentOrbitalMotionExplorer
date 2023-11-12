@@ -6,6 +6,7 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
+from prediction.constants import EARTH_RADIUS
 from src.prediction.relative_motion import RelativeMotion
 from src.prediction.trajectory_predictor import TrajectoryPredictor
 from src.prediction.satellite_status import SatelliteStatus
@@ -57,7 +58,7 @@ def main():
         y = np.sin(u) * np.sin(v)
         z = np.cos(v)
 
-        sphere_radius = 6371
+        sphere_radius = EARTH_RADIUS
         # cm = sns.color_palette("light:#5A9", as_cmap=True)
         # cm = sns.color_palette("dark:#5A9_r", as_cmap=True)
         # cm = sns.color_palette("blend:#ffffff,#376efa,#266e2e,#acad8c,#266e2e,#124d18,#ffffff", as_cmap=True)

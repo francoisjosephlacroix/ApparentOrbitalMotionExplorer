@@ -15,6 +15,8 @@ class OrbitalElements:
         self.argument_periapsis = float(argument_periapsis)  # in rads
         self.true_anomaly = float(true_anomaly)  # in rads
         self.semi_latus_rectum = self.semi_major_axis * (1 - self.eccentricity ** 2)
+        self.perigee = self.semi_major_axis * (1 - self.eccentricity)
+        self.apogee = self.semi_major_axis * (1 + self.eccentricity)
 
     @staticmethod
     def from_dict(params: Dict):
