@@ -15,21 +15,29 @@ class SatelliteStatus:
         self.orbital_elements: OrbitalElements = orbital_elements
         self.orbital_state_vectors = self.convert_orbital_elements_to_state_vectors()
 
-    def get_rotation_matrix_lvlh(self):
-        pos_vec = self.orbital_state_vectors.position
-        vel_vec = self.orbital_state_vectors.velocity
+    @staticmethod
+    def from_state_vector(timestamp: datetime, orbital_state_vectors: OrbitalStateVectors):
+        orbital_elements: OrbitalElements = SatelliteStatus.convert_state_vectors_to_orbital_elements(
+            orbital_state_vectors)
+        return SatelliteStatus(timestamp, orbital_elements)
 
-        i_vec, j_vec, k_vec = self.get_sat_reference_frame(pos_vec, vel_vec)
+    @staticmethod
+    def convert_state_vectors_to_orbital_elements(orbital_state_vectors: OrbitalStateVectors) -> OrbitalElements:
+        eccentricity_vec = orbital_state_vectors.eccentricity_vec()
+        eccentricity = np.linalg.norm(eccentricity_vec)
+        semi_major_axis = orbital_state_vectors.semi_major_axis()
+        inclination = orbital_state_vectors.inclination()
+        longitude_ascending_node = orbital_state_vectors.right_ascension()
+        argument_periapsis = orbital_state_vectors.argument_periapsis()
+        true_anomaly = orbital_state_vectors.true_anomaly()
+
+        return OrbitalElements(eccentricity, semi_major_axis, inclination, longitude_ascending_node, argument_periapsis,
+                               true_anomaly)
+
+    def get_rotation_matrix_lvlh(self):
+        i_vec, j_vec, k_vec = self.orbital_state_vectors.get_sat_reference_frame()
 
         return Rotation.from_matrix(np.array([i_vec, j_vec, k_vec]))
-
-    def get_sat_reference_frame(self, pos_vec, vel_vec):
-        i_vec = pos_vec / np.linalg.norm(pos_vec)
-        pos_vel_cross = np.cross(pos_vec, vel_vec)
-        k_vec = pos_vel_cross / np.linalg.norm(pos_vel_cross)
-        j_vec = np.cross(k_vec, i_vec)
-
-        return i_vec, j_vec, k_vec
 
     def convert_classical_to_perifocal(self):
         # AyansolaOgundele_NonlinearDynamicsandControlofSpacecraftRelativeMotion.pdf
@@ -65,9 +73,6 @@ class SatelliteStatus:
         velocity_state_vector = self.rotate_state_vector(velocity_vec)
 
         return OrbitalStateVectors(position_state_vector, velocity_state_vector)
-
-    def convert_state_vectors_to_orbital_elements(self) -> OrbitalElements:
-        return OrbitalElements(0, 0, 0, 0, 0, 0)
 
     def get_eccentricity(self):
         return self.orbital_elements.eccentricity
