@@ -38,8 +38,8 @@ def main():
 
     trajectory_predictor2 = TrajectoryPredictor(timedelta(seconds=5))
     # eccentricity, semi_major_axis, inclination, longitude_ascending_node, argument_periapsis, true_anomaly
-    orbital_elements2 = OrbitalElements(0.06, 7600, math.radians(15), math.radians(5), math.radians(5),
-                                        math.radians(15))
+    orbital_elements2 = OrbitalElements(0.1, 8000, math.radians(46), math.radians(50), math.radians(156),
+                                        math.radians(180))
     satellite_status2 = SatelliteStatus(date, orbital_elements2)
     satellite2 = Satellite(satellite_status2, trajectory_predictor2)
     satellite2.extend_trajectory(steps=steps)

@@ -7,9 +7,9 @@ from prediction.satellite_status import SatelliteStatus
 class Trajectory:
 
     def __init__(self, x: np.array, y: np.array, z: np.array):
-        self.x = x
-        self.y = y
-        self.z = z
+        self.x: np.array = x
+        self.y: np.array = y
+        self.z: np.array = z
 
     def get_coordinates(self) -> Tuple[np.array, np.array, np.array]:
         return self.x, self.y, self.z
@@ -27,3 +27,11 @@ class Trajectory:
 
     def as_matrix(self) -> np.array:
         return np.array(self.x, self.y, self.z)
+
+    def get_initial_position(self):
+        return self.x[0], self.y[0], self.z[0]
+
+    def to_list(self):
+        return [self.x.tolist(),
+                self.y.tolist(),
+                self.z.tolist()]

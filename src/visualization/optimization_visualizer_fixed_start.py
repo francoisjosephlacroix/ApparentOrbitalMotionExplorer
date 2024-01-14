@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from orbital_coordinates.orbital_elements import OrbitalElements
+from orbital_coordinates.orbital_state_vectors import OrbitalStateVectors
 from prediction.constants import EARTH_RADIUS
 from prediction.relative_motion import RelativeMotion
 from prediction.satellite import Satellite
@@ -20,7 +21,7 @@ show_relative_motion = True
 show_relative_motion_lvlh = True
 leaders_only = True
 show_solution = True
-show_top = 1
+show_top = 3
 
 linecolor = 'royalblue'
 sat_color = "forestgreen"
@@ -28,7 +29,7 @@ sat_color_start = 'y'
 sat_color_end = 'r'
 
 base_path = Path("../../smac3_output/")
-run_name = '1700180030.4311392'
+run_name = '1700190125.981081'
 run_path = Path.joinpath(base_path, run_name)
 metadata_path = Path.joinpath(run_path, "metadata.json")
 run_metadata = json.load(open(metadata_path, "r"))
@@ -38,6 +39,14 @@ steps = run_metadata.get("steps")
 ref_sat_config = run_metadata.get("ref_sat_config")
 sat_2_config = run_metadata.get("sat_2_config")
 date = datetime.strptime(run_metadata.get("date"), "%Y-%m-%dT%H:%M:%S")
+
+trajectory_predictor2 = TrajectoryPredictor(step_size)
+# eccentricity, semi_major_axis, inclination, longitude_ascending_node, argument_periapsis, true_anomaly
+orbital_elements2 = OrbitalElements.from_dict(sat_2_config)
+satellite_status2 = SatelliteStatus(date, orbital_elements2)
+satellite2 = Satellite(satellite_status2, trajectory_predictor2)
+satellite2_ref = Satellite(satellite_status2, trajectory_predictor2)
+
 
 smac_history = Path.joinpath(run_path, "0", "runhistory.json")
 run_history = json.load(open(smac_history, "r"))
@@ -128,8 +137,12 @@ for idx, config in configs_to_plot.items():
 
     trajectory_predictor2 = TrajectoryPredictor(step_size)
     # eccentricity, semi_major_axis, inclination, longitude_ascending_node, argument_periapsis, true_anomaly
-    orbital_elements2 = OrbitalElements.from_dict(config)
-    satellite_status2 = SatelliteStatus(date, orbital_elements2)
+
+    new_vel_vec = np.array([config.get("vx"), config.get("vy"), config.get("vz")])
+    orbital_state_vectors_2 = OrbitalStateVectors(satellite2_ref.satellite_status.orbital_state_vectors.position, new_vel_vec)
+
+    satellite_status2 = SatelliteStatus.from_state_vector(date, orbital_state_vectors_2)
+
     satellite2 = Satellite(satellite_status2, trajectory_predictor2)
     satellite2.extend_trajectory(steps=steps)
 

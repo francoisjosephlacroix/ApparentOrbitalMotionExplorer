@@ -33,7 +33,6 @@ class OrbitalStateVectors:
 
         mech_energy = (velocity_magnitude_square / 2) - (GRAVITATIONAL_PARAMETER / position_magnitude)
         semi_major_axis = -GRAVITATIONAL_PARAMETER / (2 * mech_energy)
-
         return semi_major_axis
 
     def inclination(self) -> float:
